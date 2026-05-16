@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.title }} | {{ shop_name }}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f6efe3;
+            color: #3f2f4f;
+        }
+
+        .header {
+            background: #cdb4db;
+            color: #2e1f3f;
+            padding: 22px 20px;
+            border-bottom: 2px solid #b08ec5;
+        }
+
+        .header-top {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #2e1f3f;
+            background: #e6d4ef;
+            border: 1px solid #b08ec5;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .main {
+            max-width: 1100px;
+            margin: 26px auto;
+            padding: 0 20px;
+        }
+
+        .category-info {
+            background: #eadcf1;
+            border: 1px solid #d5b9e4;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: #fff9f1;
+            border: 1px solid #e4d4c1;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .card h3 {
+            margin: 8px 0;
+            color: #4d3364;
+        }
+
+        .card p {
+            margin: 0 0 8px;
+        }
+
+        .price {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #6e4a8a;
+        }
+
+        @media (max-width: 768px) {
+            .main {
+                margin: 18px auto;
+                padding: 0 14px;
+            }
+
+            .header {
+                padding: 16px 14px;
+            }
+
+            .category-info,
+            .card {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-top">
+            <div>
+                <h1>{{ category.emoji }} {{ category.title }}</h1>
+                <p>{{ shop_name }}</p>
+            </div>
+            <a class="back-link" href="{% url 'index' %}">На главную</a>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="category-info">
+            <p>{{ category.description }}</p>
+        </section>
+
+        <section class="products">
+            {% for product in category.products %}
+                <article class="card">
+                    <div>{{ product.icon }}</div>
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.description }}</p>
+                    <p>{{ product.amount }}</p>
+                    <p class="price">{{ product.price }}</p>
+                </article>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>
