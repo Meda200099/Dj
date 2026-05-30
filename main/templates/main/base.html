@@ -490,7 +490,8 @@
             </a>
             <nav class="auth-nav">
                 {% if user.is_authenticated %}
-                    <span class="auth-user">Привет, {{ user.username }}!</span>
+                    <span class="auth-user">Привет, {{ user.first_name|default:user.username }}!</span>
+                    <a class="auth-btn auth-btn--login" href="{% url 'appointment' %}">Запись</a>
                     <a class="auth-btn auth-btn--logout" href="{% url 'logout' %}">Выйти</a>
                 {% else %}
                     <a class="auth-btn auth-btn--login" href="{% url 'login' %}">Вход</a>

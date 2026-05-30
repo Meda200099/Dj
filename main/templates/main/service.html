@@ -17,7 +17,7 @@
             <span class="meta-pill">⏱ {{ service.duration }}</span>
             <span class="meta-pill">💰 {{ service.price }}</span>
         </div>
-        <a class="btn-primary" href="{% url 'index' %}#appointment">Записаться на приём</a>
+        <a class="btn-primary" href="{% url 'appointment' %}?service={{ service.title|urlencode }}">Записаться на приём</a>
         <p style="margin: 16px 0 0;">
             <a class="btn-outline" href="{% url 'index' %}#services">← Все услуги</a>
         </p>

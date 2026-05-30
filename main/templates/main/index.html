@@ -8,7 +8,7 @@
         <p class="hero-quality">{{ quality_text }}</p>
         <div class="hero-buttons">
             {% for btn in booking_buttons %}
-                <a class="hero-btn" href="#{{ btn.anchor }}">
+                <a class="hero-btn" href="{% url 'appointment' %}">
                     <span>{{ btn.icon }}</span>
                     {{ btn.title }}
                 </a>
@@ -83,42 +83,15 @@
 
     <section class="section-cell section-cell--alt" id="appointment">
         <h2 class="section-title">Запишитесь на приём прямо сейчас</h2>
-        <form class="form-box" id="booking-form">
-            <label for="name">Ваше имя</label>
-            <input type="text" id="name" name="name" required>
-
-            <label for="phone">Телефон</label>
-            <input type="tel" id="phone" name="phone" required>
-
-            <label for="service">Услуга</label>
-            <select id="service" name="service">
-                {% for item in services %}
-                    <option value="{{ item.title }}">{{ item.title }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="date">Желаемая дата</label>
-            <input type="date" id="date" name="date">
-
-            <label for="comment">Комментарий</label>
-            <textarea id="comment" name="comment"></textarea>
-
-            <button type="button" class="submit-btn" id="send-btn">Записаться</button>
-            <p class="form-msg" id="form-msg">Спасибо! Мы свяжемся с вами для подтверждения записи.</p>
-        </form>
+        <p style="text-align: center; color: #5a8aa0; margin: 0 0 24px;">
+            Выберите услугу и удобную дату на отдельной странице записи.
+        </p>
+        <p style="text-align: center;">
+            {% if user.is_authenticated %}
+                <a class="submit-btn" href="{% url 'appointment' %}" style="display: inline-block;">Записаться на приём</a>
+            {% else %}
+                <a class="submit-btn" href="{% url 'register' %}" style="display: inline-block;">Зарегистрироваться и записаться</a>
+            {% endif %}
+        </p>
     </section>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.getElementById("send-btn").onclick = function() {
-        var form = document.getElementById("booking-form");
-        if (form.checkValidity()) {
-            document.getElementById("form-msg").classList.add("show");
-            form.reset();
-        } else {
-            form.reportValidity();
-        }
-    };
-</script>
 {% endblock %}
