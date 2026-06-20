@@ -571,9 +571,10 @@
                 {% if user.is_authenticated %}
                     <span class="auth-user">Привет, {{ user.first_name|default:user.username }}!</span>
                     <a class="auth-btn auth-btn--login" href="{% url 'profile' %}">Кабинет</a>
-                    <a class="auth-btn auth-btn--login" href="{% url 'appointment' %}">Бронь</a>
-                    {% if is_site_admin %}
-                        <a class="auth-btn auth-btn--admin" href="{% url 'admin_panel' %}">Админ</a>
+                    {% if user.username == 'admin' %}
+                        <a class="auth-btn auth-btn--admin" href="{% url 'admin_panel' %}">Админ панель</a>
+                    {% else %}
+                        <a class="auth-btn auth-btn--login" href="{% url 'appointment' %}">Бронь</a>
                     {% endif %}
                     <a class="auth-btn auth-btn--logout" href="{% url 'logout' %}">Выйти</a>
                 {% else %}
