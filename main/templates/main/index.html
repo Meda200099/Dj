@@ -2,25 +2,29 @@
 
 {% block content %}
     <section class="section-cell hero-cell" id="top">
-        <div class="hero-icon">👁️</div>
-        <h1>{{ clinic_name }}</h1>
+        <div class="hero-icon">🎮</div>
+        <h1>{{ club_name }}</h1>
         <p class="hero-slogan">{{ slogan }}</p>
         <p class="hero-quality">{{ quality_text }}</p>
         <div class="hero-buttons">
             {% for btn in booking_buttons %}
-                <a class="hero-btn" href="{% url 'appointment' %}">
+                <a class="hero-btn" href="{% url 'index' %}#tariffs">
                     <span>{{ btn.icon }}</span>
                     {{ btn.title }}
                 </a>
             {% endfor %}
+            <a class="hero-btn" href="{% url 'catalog' %}">
+                <span>🖥️</span>
+                Каталог ПК
+            </a>
         </div>
     </section>
 
-    <section class="section-cell section-cell--alt" id="services">
-        <h2 class="section-title">Наши услуги</h2>
+    <section class="section-cell section-cell--alt" id="tariffs">
+        <h2 class="section-title">Тарифы</h2>
         <div class="cards-grid">
-            {% for item in services %}
-                <a class="card-link" href="{% url 'service_detail' item.slug %}">
+            {% for item in tariffs %}
+                <a class="card-link" href="{% url 'tariff_detail' item.slug %}">
                     <div class="card">
                         <div class="card-icon">{{ item.icon }}</div>
                         <h3>{{ item.title }}</h3>
@@ -33,11 +37,11 @@
     </section>
 
     <section class="section-cell" id="prices">
-        <h2 class="section-title">Прозрачные цены</h2>
-        <div class="discount-box">
-            <div class="card-icon">🎁</div>
-            <h3 style="margin: 8px 0 4px; color: #0d5a7a;">Специальное предложение</h3>
-            <p style="margin: 0; color: #8a6a20; font-weight: 600;">Скидка 15% на первый приём до конца месяца</p>
+        <h2 class="section-title">Прайс-лист</h2>
+        <div class="promo-box">
+            <div class="card-icon">🔥</div>
+            <h3 style="margin: 8px 0 4px; color: #ddd6fe;">Акция новичкам</h3>
+            <p style="margin: 0; color: #c4b5fd; font-weight: 600;">Первый час Pro — со скидкой 20% до конца месяца</p>
         </div>
         <div class="prices-inner">
             {% for item in prices %}
@@ -55,25 +59,25 @@
     <section class="section-cell section-cell--warm" id="about">
         <div class="two-cols">
             <div class="inner-cell">
-                <h2 class="section-title" style="margin-top: 0;">Наши специалисты</h2>
+                <h2 class="section-title" style="margin-top: 0;">Зоны клуба</h2>
                 <div class="cards-grid" style="grid-template-columns: 1fr;">
-                    {% for doc in specialists %}
+                    {% for zone in zones %}
                         <div class="card">
-                            <div class="card-icon">{{ doc.icon }}</div>
-                            <h3>{{ doc.name }}</h3>
-                            <p>{{ doc.role }}</p>
+                            <div class="card-icon">{{ zone.icon }}</div>
+                            <h3>{{ zone.name }} ({{ zone.seats_count }} мест)</h3>
+                            <p>{{ zone.text }}</p>
                         </div>
                     {% endfor %}
                 </div>
             </div>
             <div class="inner-cell">
-                <h2 class="section-title" style="margin-top: 0;">Современное оборудование</h2>
+                <h2 class="section-title" style="margin-top: 0;">Периферия</h2>
                 <div class="cards-grid" style="grid-template-columns: 1fr;">
-                    {% for eq in equipment %}
+                    {% for item in peripherals %}
                         <div class="card">
-                            <div class="card-icon">{{ eq.icon }}</div>
-                            <h3>{{ eq.name }}</h3>
-                            <p>{{ eq.text }}</p>
+                            <div class="card-icon">{{ item.icon }}</div>
+                            <h3>{{ item.name }}</h3>
+                            <p>{{ item.text }}</p>
                         </div>
                     {% endfor %}
                 </div>
@@ -81,17 +85,32 @@
         </div>
     </section>
 
-    <section class="section-cell section-cell--alt" id="appointment">
-        <h2 class="section-title">Запишитесь на приём прямо сейчас</h2>
-        <p style="text-align: center; color: #5a8aa0; margin: 0 0 24px;">
-            Выберите услугу и удобную дату на отдельной странице записи.
+    <section class="section-cell section-cell--alt" id="booking">
+        <h2 class="section-title">Забронируй место прямо сейчас</h2>
+        <p style="text-align: center; color: #8b7aa8; margin: 0 0 12px;">
+            43 игровых места — выберите тариф, время и ПК на странице бронирования.
+        </p>
+        <p style="text-align: center; margin: 0 0 24px;">
+            <a href="{% url 'catalog' %}" style="color: #a78bfa; font-weight: 600;">Смотреть каталог компьютеров →</a>
         </p>
         <p style="text-align: center;">
             {% if user.is_authenticated %}
-                <a class="submit-btn" href="{% url 'appointment' %}" style="display: inline-block;">Записаться на приём</a>
+                <a class="submit-btn" href="{% url 'appointment' %}" style="display: inline-block; width: auto; padding: 13px 32px;">Забронировать место</a>
             {% else %}
-                <a class="submit-btn" href="{% url 'register' %}" style="display: inline-block;">Зарегистрироваться и записаться</a>
+                <a class="submit-btn" href="{% url 'register' %}" style="display: inline-block; width: auto; padding: 13px 32px;">Регистрация и бронь</a>
             {% endif %}
         </p>
+    </section>
+
+    <section class="section-cell" id="faq">
+        <h2 class="section-title">Частые вопросы</h2>
+        <div class="info-grid">
+            {% for item in faq %}
+                <div class="info-cell">
+                    <h3>{{ item.q }}</h3>
+                    <p style="margin: 0; color: #a89bc4;">{{ item.a }}</p>
+                </div>
+            {% endfor %}
+        </div>
     </section>
 {% endblock %}

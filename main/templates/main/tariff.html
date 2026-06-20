@@ -1,0 +1,41 @@
+{% extends "main/base.html" %}
+
+{% block title %}{{ tariff.title }} — {{ club_name }}{% endblock %}
+
+{% block content %}
+    <p class="breadcrumb">
+        <a href="{% url 'index' %}">Главная</a> /
+        <a href="{% url 'index' %}#tariffs">Тарифы</a> /
+        {{ tariff.title }}
+    </p>
+
+    <section class="section-cell hero-cell">
+        <div class="service-hero-icon">{{ tariff.icon }}</div>
+        <h1 class="section-title" style="margin-bottom: 12px;">{{ tariff.title }}</h1>
+        <p class="service-lead">{{ tariff.lead }}</p>
+        <div class="meta-row">
+            <span class="meta-pill">⏱ {{ tariff.duration }}</span>
+            <span class="meta-pill">💰 {{ tariff.price }}</span>
+        </div>
+        <a class="btn-primary" href="{% url 'appointment' %}?tariff={{ tariff.title|urlencode }}">Забронировать</a>
+        <p style="margin: 16px 0 0;">
+            <a class="btn-outline" href="{% url 'index' %}#tariffs">← Все тарифы</a>
+        </p>
+    </section>
+
+    <section class="section-cell section-cell--alt">
+        <h2 class="section-title">Подробности тарифа</h2>
+        <div class="info-grid">
+            {% for block in tariff.blocks %}
+                <div class="info-cell">
+                    <h3>{{ block.title }}</h3>
+                    <ul>
+                        {% for item in block.items %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

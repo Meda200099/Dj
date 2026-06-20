@@ -1,117 +1,240 @@
 {% extends "main/base.html" %}
 
-{% block title %}Регистрация — {{ clinic_name }}{% endblock %}
+
+
+{% block title %}Регистрация — {{ club_name }}{% endblock %}
+
+
 
 {% block extra_css %}
+<style>
 .auth-page {
+
     max-width: 440px;
+
     margin: 20px auto 40px;
+
 }
+
 .auth-card {
-    background: linear-gradient(145deg, #ffffff 0%, #eef8fc 45%, #d8eef8 100%);
-    border: 1px solid rgba(184, 220, 232, 0.9);
+
+    background: rgba(26, 20, 40, 0.85);
+
+    backdrop-filter: blur(12px);
+
+    border: 1px solid rgba(139, 92, 246, 0.25);
+
     border-radius: 24px;
+
     padding: 40px 36px;
-    box-shadow: 0 12px 40px rgba(13, 90, 122, 0.12);
+
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+
 }
+
 .auth-card-icon {
+
     font-size: 48px;
+
     text-align: center;
+
     margin-bottom: 8px;
+
 }
+
 .auth-card h1 {
+
     text-align: center;
+
     margin: 0 0 8px;
+
     font-size: 1.75rem;
-    color: #0d5a7a;
+
+    color: #ddd6fe;
+
 }
+
 .auth-subtitle {
+
     text-align: center;
-    color: #5a8aa0;
+
+    color: #8b7aa8;
+
     font-size: 14px;
+
     margin: 0 0 28px;
+
 }
+
 .auth-card label {
+
     display: block;
+
     margin-bottom: 6px;
+
     font-size: 14px;
-    color: #3d5f73;
+
+    color: #b8a9d4;
+
     font-weight: 600;
+
 }
+
 .auth-card input {
+
     width: 100%;
+
     padding: 12px 14px;
+
     margin-bottom: 18px;
-    border: 1px solid #b8dce8;
+
+    border: 1px solid rgba(139, 92, 246, 0.3);
+
     border-radius: 12px;
+
     font-family: inherit;
+
     font-size: 15px;
-    background: #fff;
+
+    background: rgba(20, 16, 31, 0.9);
+
+    color: #e8e0f5;
+
     transition: border-color 0.2s, box-shadow 0.2s;
+
 }
+
 .auth-card input:focus {
+
     outline: none;
-    border-color: #2a9ec4;
-    box-shadow: 0 0 0 3px rgba(42, 158, 196, 0.2);
+
+    border-color: #8b5cf6;
+
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+
 }
+
 .auth-card .submit-btn { margin-top: 4px; }
+
 .error {
-    background: #fdecea;
-    color: #c0392b;
+
+    background: rgba(80, 20, 30, 0.45);
+
+    color: #fca5a5;
+
     text-align: center;
+
     padding: 10px 14px;
+
     border-radius: 10px;
+
     margin-bottom: 18px;
+
     font-size: 14px;
+
+    border: 1px solid rgba(248, 113, 113, 0.25);
+
 }
+
 .auth-links {
+
     text-align: center;
+
     margin-top: 22px;
+
     font-size: 14px;
-    color: #4a6b7d;
+
+    color: #a89bc4;
+
 }
+
 .auth-links a {
-    color: #2a9ec4;
+
+    color: #a78bfa;
+
     font-weight: 600;
+
 }
+
 .auth-links a:hover { text-decoration: underline; }
+
 .auth-links p { margin: 8px 0; }
+</style>
 {% endblock %}
+
+
 
 {% block content %}
+
 <div class="auth-page">
+
     <div class="auth-card">
-        <div class="auth-card-icon">✨</div>
+
+        <div class="auth-card-icon">🎮</div>
+
         <h1>Регистрация</h1>
-        <p class="auth-subtitle">Создайте аккаунт для записи и уведомлений</p>
+
+        <p class="auth-subtitle">Создайте аккаунт для бронирования мест</p>
+
         {% if error %}
+
             <p class="error">{{ error }}</p>
+
         {% endif %}
+
         <form method="post">
+
             {% csrf_token %}
+
             <label for="full_name">Ваше имя</label>
+
             <input type="text" id="full_name" name="full_name" required placeholder="Иван Иванов" value="{{ full_name|default:'' }}">
 
+
+
             <label for="phone">Телефон</label>
+
             <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 123-45-67" value="{{ phone|default:'' }}">
 
+
+
             <label for="username">Логин</label>
+
             <input type="text" id="username" name="username" required placeholder="Придумайте логин" value="{{ username|default:'' }}">
 
+
+
             <label for="password">Пароль</label>
+
             <input type="password" id="password" name="password" required placeholder="Минимум 8 символов">
 
+
+
             <label for="password2">Повторите пароль</label>
+
             <input type="password" id="password2" name="password2" required placeholder="Ещё раз пароль">
 
+
+
             <button type="submit" class="submit-btn">Зарегистрироваться</button>
+
         </form>
+
         <div class="auth-links">
+
             <p>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
+
             <p><a href="{% url 'index' %}">← На главную</a></p>
+
         </div>
+
     </div>
+
 </div>
+
 {% endblock %}
 
+
+
 {% block footer %}{% endblock %}
+

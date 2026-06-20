@@ -1,0 +1,137 @@
+{% extends "main/base.html" %}
+
+{% block title %}Личный кабинет — {{ club_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.profile-info {
+    background: rgba(34, 27, 52, 0.7);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+.profile-info p { margin: 6px 0; color: #b8a9d4; }
+.profile-info strong { color: #c4b5fd; }
+.bookings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.bookings-table th,
+.bookings-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+}
+.bookings-table th {
+    color: #a78bfa;
+    font-weight: 600;
+}
+.bookings-table td { color: #d4c4f0; }
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.status--pending { background: rgba(120, 80, 20, 0.4); color: #fcd34d; }
+.status--confirmed { background: rgba(16, 80, 50, 0.4); color: #86efac; }
+.status--cancelled { background: rgba(80, 20, 30, 0.4); color: #fca5a5; }
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(80, 20, 30, 0.35);
+    color: #fca5a5;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-sm:hover { background: rgba(100, 30, 40, 0.5); }
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #8b7aa8;
+}
+.table-wrap { overflow-x: auto; }
+@media (max-width: 600px) {
+    .bookings-table { font-size: 12px; }
+    .bookings-table th, .bookings-table td { padding: 8px 6px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section-cell">
+    <div class="profile-header">
+        <div>
+            <h1 class="section-title" style="margin: 0; text-align: left;">Личный кабинет</h1>
+            <p style="color: #8b7aa8; margin: 8px 0 0;">Управление бронированиями</p>
+        </div>
+        <a class="btn-primary" href="{% url 'appointment' %}">+ Новая бронь</a>
+    </div>
+
+    <div class="profile-info">
+        <p><strong>Имя:</strong> {{ user.first_name|default:user.username }}</p>
+        <p><strong>Логин:</strong> {{ user.username }}</p>
+        <p><strong>Телефон:</strong> {{ profile.phone }}</p>
+    </div>
+
+    <h2 class="sub-title">Мои бронирования</h2>
+
+    {% if appointments %}
+    <div class="table-wrap">
+        <table class="bookings-table">
+            <thead>
+                <tr>
+                    <th>Тариф</th>
+                    <th>Место</th>
+                    <th>Дата</th>
+                    <th>Время</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appt in appointments %}
+                <tr>
+                    <td>{{ appt.tariff }}</td>
+                    <td>{{ appt.seat }}</td>
+                    <td>{{ appt.appointment_date|date:"d.m.Y" }}</td>
+                    <td>{{ appt.appointment_time|time:"H:i" }}</td>
+                    <td>
+                        <span class="status-badge status--{{ appt.status }}">{{ appt.status_label }}</span>
+                    </td>
+                    <td>
+                        {% if appt.status != 'cancelled' %}
+                        <form method="post" style="display:inline;" onsubmit="return confirm('Отменить бронь?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancel">
+                            <input type="hidden" name="appointment_id" value="{{ appt.id }}">
+                            <button type="submit" class="btn-sm">Отменить</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>У вас пока нет бронирований.</p>
+        <p style="margin-top: 16px;"><a class="btn-primary" href="{% url 'appointment' %}">Забронировать место</a></p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

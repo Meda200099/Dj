@@ -1,18 +1,20 @@
 {% extends "main/base.html" %}
 
-{% block title %}Запись на приём — {{ clinic_name }}{% endblock %}
+{% block title %}Бронирование — {{ club_name }}{% endblock %}
 
 {% block extra_css %}
+<style>
 .appointment-page {
     max-width: 520px;
     margin: 20px auto 40px;
 }
 .appointment-card {
-    background: linear-gradient(145deg, #ffffff 0%, #eef8fc 45%, #d8eef8 100%);
-    border: 1px solid rgba(184, 220, 232, 0.9);
+    background: rgba(26, 20, 40, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(139, 92, 246, 0.25);
     border-radius: 24px;
     padding: 40px 36px;
-    box-shadow: 0 12px 40px rgba(13, 90, 122, 0.12);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 .appointment-card-icon {
     font-size: 48px;
@@ -23,33 +25,33 @@
     text-align: center;
     margin: 0 0 8px;
     font-size: 1.75rem;
-    color: #0d5a7a;
+    color: #ddd6fe;
 }
 .appointment-subtitle {
     text-align: center;
-    color: #5a8aa0;
+    color: #8b7aa8;
     font-size: 14px;
     margin: 0 0 24px;
 }
-.patient-info {
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid #b8dce8;
+.player-info {
+    background: rgba(34, 27, 52, 0.7);
+    border: 1px solid rgba(139, 92, 246, 0.25);
     border-radius: 14px;
     padding: 14px 18px;
     margin-bottom: 24px;
     font-size: 14px;
-    color: #3d5f73;
+    color: #b8a9d4;
 }
-.patient-info strong {
+.player-info strong {
     display: block;
-    color: #0d5a7a;
+    color: #c4b5fd;
     margin-bottom: 6px;
 }
 .appointment-card label {
     display: block;
     margin-bottom: 6px;
     font-size: 14px;
-    color: #3d5f73;
+    color: #b8a9d4;
     font-weight: 600;
 }
 .appointment-card input,
@@ -58,12 +60,17 @@
     width: 100%;
     padding: 12px 14px;
     margin-bottom: 18px;
-    border: 1px solid #b8dce8;
+    border: 1px solid rgba(139, 92, 246, 0.3);
     border-radius: 12px;
     font-family: inherit;
     font-size: 15px;
-    background: #fff;
+    background: rgba(20, 16, 31, 0.9);
+    color: #e8e0f5;
     transition: border-color 0.2s, box-shadow 0.2s;
+}
+.appointment-card select option {
+    background: #1a1428;
+    color: #e8e0f5;
 }
 .appointment-card textarea {
     min-height: 100px;
@@ -73,83 +80,97 @@
 .appointment-card select:focus,
 .appointment-card textarea:focus {
     outline: none;
-    border-color: #2a9ec4;
-    box-shadow: 0 0 0 3px rgba(42, 158, 196, 0.2);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
 }
 .appointment-card .submit-btn { margin-top: 4px; }
 .success {
-    background: #e8f8ef;
-    color: #1e7a4a;
+    background: rgba(16, 80, 50, 0.45);
+    color: #86efac;
     text-align: center;
     padding: 10px 14px;
     border-radius: 10px;
     margin-bottom: 18px;
     font-size: 14px;
+    border: 1px solid rgba(74, 222, 128, 0.25);
 }
 .error {
-    background: #fdecea;
-    color: #c0392b;
+    background: rgba(80, 20, 30, 0.45);
+    color: #fca5a5;
     text-align: center;
     padding: 10px 14px;
     border-radius: 10px;
     margin-bottom: 18px;
     font-size: 14px;
+    border: 1px solid rgba(248, 113, 113, 0.25);
 }
 .appointment-links {
     text-align: center;
     margin-top: 22px;
     font-size: 14px;
-    color: #4a6b7d;
+    color: #a89bc4;
 }
 .appointment-links a {
-    color: #2a9ec4;
+    color: #a78bfa;
     font-weight: 600;
 }
 .appointment-links a:hover { text-decoration: underline; }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="appointment-page">
     <div class="appointment-card">
-        <div class="appointment-card-icon">📅</div>
-        <h1>Запись на приём</h1>
-        <p class="appointment-subtitle">Выберите услугу и удобную дату</p>
+        <div class="appointment-card-icon">🎯</div>
+        <h1>Бронирование места</h1>
+        <p class="appointment-subtitle">Выберите тариф, время и место (доступно {{ all_seats_count }} ПК)</p>
 
-        <div class="patient-info">
+        <div class="player-info">
             <strong>Ваши данные</strong>
-            Имя: {{ patient_name }}<br>
-            Телефон: {{ patient_phone }}
+            Имя: {{ player_name }}<br>
+            Телефон: {{ player_phone }}
         </div>
 
-        {% if success %}
-            <p class="success">{{ success }}</p>
-        {% endif %}
         {% if error %}
             <p class="error">{{ error }}</p>
         {% endif %}
 
         <form method="post">
             {% csrf_token %}
-            <label for="service">Вид услуги</label>
-            <select id="service" name="service" required>
-                <option value="" disabled {% if not selected_service %}selected{% endif %}>Выберите услугу</option>
-                {% for item in services %}
-                    <option value="{{ item.title }}" {% if selected_service == item.title %}selected{% endif %}>
-                        {{ item.title }}
+            <label for="tariff">Тариф</label>
+            <select id="tariff" name="tariff" required>
+                <option value="" disabled {% if not selected_tariff %}selected{% endif %}>Выберите тариф</option>
+                {% for item in tariffs %}
+                    <option value="{{ item.title }}" {% if selected_tariff == item.title %}selected{% endif %}>
+                        {{ item.title }} — {{ item.price }}
                     </option>
                 {% endfor %}
             </select>
 
-            <label for="date">Дата назначения</label>
-            <input type="date" id="date" name="date" value="{{ selected_date }}" required>
+            <label for="seat">Место</label>
+            <select id="seat" name="seat" required>
+                <option value="" disabled {% if not selected_seat %}selected{% endif %}>Выберите место</option>
+                {% for seat in seats %}
+                    <option value="{{ seat.value }}" {% if selected_seat == seat.value %}selected{% endif %}>
+                        {{ seat.label }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="date">Дата</label>
+            <input type="date" id="date" name="date" value="{{ selected_date }}" required min="">
+
+            <label for="time">Время начала</label>
+            <input type="time" id="time" name="time" value="{{ selected_time }}" required>
 
             <label for="comment">Комментарий</label>
             <textarea id="comment" name="comment" placeholder="Пожелания или вопросы (необязательно)">{{ selected_comment }}</textarea>
 
-            <button type="submit" class="submit-btn">Записаться</button>
+            <button type="submit" class="submit-btn">Забронировать</button>
         </form>
 
         <div class="appointment-links">
+            <p><a href="{% url 'catalog' %}">Каталог ПК</a> · <a href="{% url 'profile' %}">Мои брони</a></p>
             <p><a href="{% url 'index' %}">← На главную</a></p>
         </div>
     </div>
@@ -157,3 +178,21 @@
 {% endblock %}
 
 {% block footer %}{% endblock %}
+
+{% block extra_js %}
+<script>
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        dateInput.min = new Date().toISOString().split('T')[0];
+    }
+    const tariffSelect = document.getElementById('tariff');
+    if (tariffSelect) {
+        tariffSelect.addEventListener('change', function() {
+            const params = new URLSearchParams(window.location.search);
+            params.set('tariff', this.value);
+            params.delete('seat');
+            window.location = '{% url "appointment" %}?' + params.toString();
+        });
+    }
+</script>
+{% endblock %}

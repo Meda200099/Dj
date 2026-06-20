@@ -1,0 +1,171 @@
+{% extends "main/base.html" %}
+
+{% block title %}Каталог ПК — {{ club_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.catalog-hero {
+    text-align: center;
+    margin-bottom: 8px;
+}
+.catalog-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin: 20px 0 28px;
+}
+.zone-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+.zone-filter {
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(34, 27, 52, 0.9);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    color: #b8a9d4;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.15s;
+}
+.zone-filter:hover, .zone-filter.active {
+    background: rgba(76, 29, 149, 0.45);
+    border-color: rgba(167, 139, 250, 0.5);
+    color: #ede9fe;
+    text-decoration: none;
+}
+.pc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+.pc-card {
+    background: rgba(34, 27, 52, 0.9);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 14px;
+    padding: 20px;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.pc-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(167, 139, 250, 0.4);
+}
+.pc-id {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ddd6fe;
+    margin-bottom: 4px;
+}
+.pc-zone {
+    font-size: 13px;
+    color: #a78bfa;
+    margin-bottom: 12px;
+}
+.pc-specs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    color: #a89bc4;
+}
+.pc-specs li {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+.pc-specs li:last-child { border-bottom: none; }
+.pc-specs strong { color: #c4b5fd; }
+.pc-book {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #a78bfa;
+    font-weight: 600;
+}
+.zones-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+}
+.zone-card h3 { margin: 0 0 8px; color: #ddd6fe; }
+.zone-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.zone-tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(76, 29, 149, 0.35);
+    color: #c4b5fd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section-cell">
+    <p class="breadcrumb"><a href="{% url 'index' %}">Главная</a> / Каталог ПК</p>
+    <div class="catalog-hero">
+        <h1 class="section-title" style="margin-bottom: 8px;">Каталог компьютеров</h1>
+        <p class="service-lead">{{ total_seats }} игровых мест в четырёх зонах — выберите подходящее железо</p>
+    </div>
+
+    <div class="catalog-stats">
+        {% for zone in zones %}
+            <span class="meta-pill">{{ zone.icon }} {{ zone.name }} — {{ zone.seats_count }} мест</span>
+        {% endfor %}
+    </div>
+
+    <div class="zone-filters">
+        {% for f in zone_filters %}
+            <a class="zone-filter {% if active_zone == f.key %}active{% endif %}"
+               href="{% url 'catalog' %}?zone={{ f.key }}">
+                {{ f.icon }} {{ f.label }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="pc-grid">
+        {% for pc in computers %}
+            <div class="pc-card">
+                <div class="pc-id">{{ pc.id }}</div>
+                <div class="pc-zone">{{ pc.zone }} · тариф «{{ pc.tariff }}» · ряд {{ pc.row }}</div>
+                <ul class="pc-specs">
+                    <li><strong>CPU:</strong> {{ pc.cpu }}</li>
+                    <li><strong>GPU:</strong> {{ pc.gpu }}</li>
+                    <li><strong>RAM:</strong> {{ pc.ram }}</li>
+                    <li><strong>Монитор:</strong> {{ pc.monitor }}</li>
+                    <li><strong>SSD:</strong> {{ pc.storage }}</li>
+                </ul>
+                <a class="pc-book" href="{% url 'appointment' %}?tariff={{ pc.tariff|urlencode }}&seat={{ pc.id }}">
+                    Забронировать →
+                </a>
+            </div>
+        {% empty %}
+            <p style="color: #8b7aa8; text-align: center; grid-column: 1 / -1;">В этой зоне нет мест.</p>
+        {% endfor %}
+    </div>
+
+    <h2 class="sub-title" style="margin-top: 36px;">Зоны клуба</h2>
+    <div class="zones-overview">
+        {% for zone in zones %}
+            <div class="card zone-card">
+                <div class="card-icon">{{ zone.icon }}</div>
+                <h3>{{ zone.name }}</h3>
+                <p>{{ zone.text }}</p>
+                <div class="zone-tags">
+                    {% for feat in zone.features %}
+                        <span class="zone-tag">{{ feat }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
