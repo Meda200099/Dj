@@ -51,3 +51,47 @@ class Appointment(models.Model):
     @property
     def status_label(self):
         return dict(self.STATUS_CHOICES).get(self.status, self.status)
+
+
+class CatalogSession(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='catalog_sessions',
+    )
+    session_key = models.CharField('Ключ сессии', max_length=40, db_index=True)
+    zone = models.CharField('Зона каталога', max_length=30, blank=True, default='all')
+    duration_seconds = models.PositiveIntegerField('Время на странице (сек)', default=0)
+    started_at = models.DateTimeField('Начало просмотра', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-started_at']
+        verbose_name = 'Сессия каталога'
+        verbose_name_plural = 'Сессии каталога'
+
+    def __str__(self):
+        who = self.user.username if self.user else 'Гость'
+        return f'{who} — {self.zone} ({self.duration_seconds} сек)'
+
+
+class TariffPageView(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tariff_views',
+    )
+    session_key = models.CharField('Ключ сессии', max_length=40, db_index=True)
+    tariff = models.CharField('Тариф', max_length=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Просмотр тарифа'
+        verbose_name_plural = 'Просмотры тарифов'
+
+    def __str__(self):
+        return f'{self.tariff} ({self.created_at:%d.%m.%Y %H:%M})'

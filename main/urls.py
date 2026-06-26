@@ -9,6 +9,7 @@ urlpatterns = [
     path('appointment/', views.appointment_view, name='appointment'),
     path('profile/', views.profile_view, name='profile'),
     path('panel/', views.admin_panel_view, name='admin_panel'),
+    path('analytics/catalog-ping/', views.catalog_session_ping, name='catalog_session_ping'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
 ]

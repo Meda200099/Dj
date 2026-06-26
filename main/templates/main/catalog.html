@@ -169,3 +169,54 @@
     </div>
 </section>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var sessionId = {{ catalog_session_id }};
+    var pingUrl = "{% url 'catalog_session_ping' %}";
+    var csrfToken = "{{ csrf_token }}";
+    var elapsed = 0;
+    var visible = !document.hidden;
+
+    function sendDuration(useBeacon) {
+        if (!sessionId) return;
+        var body = "session_id=" + encodeURIComponent(sessionId)
+            + "&duration=" + encodeURIComponent(elapsed)
+            + "&csrfmiddlewaretoken=" + encodeURIComponent(csrfToken);
+        if (useBeacon && navigator.sendBeacon) {
+            var blob = new Blob([body], { type: "application/x-www-form-urlencoded" });
+            navigator.sendBeacon(pingUrl, blob);
+            return;
+        }
+        fetch(pingUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: body,
+            credentials: "same-origin",
+            keepalive: true
+        });
+    }
+
+    setInterval(function () {
+        if (visible) {
+            elapsed += 1;
+            if (elapsed % 15 === 0) {
+                sendDuration(false);
+            }
+        }
+    }, 1000);
+
+    document.addEventListener("visibilitychange", function () {
+        visible = !document.hidden;
+        if (!visible) {
+            sendDuration(true);
+        }
+    });
+
+    window.addEventListener("pagehide", function () {
+        sendDuration(true);
+    });
+})();
+</script>
+{% endblock %}

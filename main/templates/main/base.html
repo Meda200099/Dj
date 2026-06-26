@@ -104,6 +104,8 @@
             background: rgba(30, 24, 48, 0.85);
             color: #c4b5fd;
             border: 1px solid rgba(139, 92, 246, 0.25);
+            cursor: pointer;
+            font-family: inherit;
         }
 
         .auth-btn--admin {
@@ -571,12 +573,14 @@
                 {% if user.is_authenticated %}
                     <span class="auth-user">Привет, {{ user.first_name|default:user.username }}!</span>
                     <a class="auth-btn auth-btn--login" href="{% url 'profile' %}">Кабинет</a>
-                    {% if user.username == 'admin' %}
+                    {% if is_site_admin %}
                         <a class="auth-btn auth-btn--admin" href="{% url 'admin_panel' %}">Админ панель</a>
-                    {% else %}
-                        <a class="auth-btn auth-btn--login" href="{% url 'appointment' %}">Бронь</a>
                     {% endif %}
-                    <a class="auth-btn auth-btn--logout" href="{% url 'logout' %}">Выйти</a>
+                    <a class="auth-btn auth-btn--login" href="{% url 'appointment' %}">Бронь</a>
+                    <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="auth-btn auth-btn--logout">Выйти</button>
+                    </form>
                 {% else %}
                     <a class="auth-btn auth-btn--login" href="{% url 'login' %}">Вход</a>
                     <a class="auth-btn auth-btn--register" href="{% url 'register' %}">Регистрация</a>

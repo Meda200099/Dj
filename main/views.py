@@ -1,15 +1,21 @@
-from datetime import date
+from datetime import date, timedelta
+from urllib.parse import urlencode
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import Http404
+from django.core.exceptions import ValidationError
+from django.http import Http404, JsonResponse
 from django.utils import timezone
-from django.db.models import Count, Q
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.db import transaction
+from django.db.models import Q
+from django.views.decorators.http import require_POST
 
-from .models import Profile, Appointment
+from .models import Profile, Appointment, CatalogSession, TariffPageView
+from .analytics import get_analytics_context
 from .decorators import site_admin_required
 from .club_data import (
     CLUB,
@@ -25,6 +31,8 @@ from .club_data import (
     get_computers_by_zone,
     get_seats_for_tariff,
 )
+
+VALID_TARIFFS = {t["title"] for t in TARIFFS}
 
 
 def _club_context():
@@ -59,9 +67,49 @@ def index(request):
     return render(request, "main/index.html", data)
 
 
+def _ensure_session_key(request):
+    if not request.session.session_key:
+        request.session.create()
+    return request.session.session_key
+
+
+def _admin_panel_redirect_url(tab, search="", status_filter=""):
+    params = {"tab": tab}
+    if search:
+        params["q"] = search
+    if tab == "appointments" and status_filter:
+        params["status"] = status_filter
+    return f"?{urlencode(params)}"
+
+
+def _safe_next_redirect(request, fallback="appointment"):
+    next_url = request.GET.get("next") or request.POST.get("next")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+    return redirect(fallback)
+
+
 def catalog_view(request):
     zone = request.GET.get("zone", "all")
     computers = get_computers_by_zone(zone)
+    session_key = _ensure_session_key(request)
+    zone_key = zone or "all"
+    cutoff = timezone.now() - timedelta(minutes=30)
+    catalog_session = CatalogSession.objects.filter(
+        session_key=session_key,
+        zone=zone_key,
+        started_at__gte=cutoff,
+    ).order_by("-started_at").first()
+    if catalog_session is None:
+        catalog_session = CatalogSession.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            session_key=session_key,
+            zone=zone_key,
+        )
     data = {
         **_club_context(),
         "computers": computers,
@@ -69,6 +117,7 @@ def catalog_view(request):
         "zone_filters": ZONE_FILTERS,
         "active_zone": zone,
         "total_seats": len(SEATS),
+        "catalog_session_id": catalog_session.pk,
     }
     return render(request, "main/catalog.html", data)
 
@@ -77,6 +126,11 @@ def tariff_detail(request, slug):
     tariff = get_tariff(slug)
     if tariff is None:
         raise Http404("Тариф не найден")
+    TariffPageView.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        session_key=_ensure_session_key(request),
+        tariff=tariff["title"],
+    )
     data = {
         **_club_context(),
         "tariff": tariff,
@@ -104,6 +158,10 @@ def register_view(request):
             error = "Укажите ваше имя"
         elif not phone:
             error = "Укажите телефон"
+        elif not username:
+            error = "Укажите логин"
+        elif len(username) < 3:
+            error = "Логин должен быть не короче 3 символов"
         elif len(password or "") < 8:
             error = "Пароль должен быть не короче 8 символов"
         elif password != password2:
@@ -111,13 +169,18 @@ def register_view(request):
         elif User.objects.filter(username=username).exists():
             error = "Такой логин уже занят"
         else:
-            user = User.objects.create_user(username=username, password=password)
-            user.first_name = full_name
-            user.save()
-            Profile.objects.create(user=user, phone=phone)
-            login(request, user)
-            messages.success(request, "Добро пожаловать! Теперь можно забронировать место.")
-            return redirect("appointment")
+            try:
+                with transaction.atomic():
+                    user = User.objects.create_user(username=username, password=password)
+                    user.first_name = full_name
+                    user.save()
+                    Profile.objects.create(user=user, phone=phone)
+            except ValidationError:
+                error = "Некорректный логин"
+            else:
+                login(request, user)
+                messages.success(request, "Добро пожаловать! Теперь можно забронировать место.")
+                return redirect("appointment")
 
     return render(request, "main/register.html", {
         **_club_context(),
@@ -138,6 +201,8 @@ def appointment_view(request):
     error = None
     selected_tariff = request.GET.get("tariff", "")
     selected_seat = request.GET.get("seat", "")
+    if selected_tariff and selected_tariff not in VALID_TARIFFS:
+        selected_tariff = ""
     selected_date = ""
     selected_time = ""
     selected_comment = ""
@@ -160,6 +225,8 @@ def appointment_view(request):
 
         if not selected_tariff:
             error = "Выберите тариф"
+        elif selected_tariff not in VALID_TARIFFS:
+            error = "Выберите корректный тариф"
         elif not selected_seat or selected_seat not in valid_seat_values:
             error = "Выберите корректное место для выбранного тарифа"
         elif not selected_date:
@@ -175,23 +242,28 @@ def appointment_view(request):
                 if booking_date < date.today():
                     error = "Нельзя бронировать на прошедшую дату"
                 else:
-                    conflict = Appointment.objects.filter(
-                        seat=selected_seat,
-                        appointment_date=selected_date,
-                        appointment_time=selected_time,
-                        status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_CONFIRMED],
-                    ).exists()
-                    if conflict:
-                        error = "Это место уже занято на выбранное время"
-                    else:
-                        Appointment.objects.create(
-                            user=request.user,
-                            tariff=selected_tariff,
+                    with transaction.atomic():
+                        conflict = Appointment.objects.select_for_update().filter(
                             seat=selected_seat,
                             appointment_date=selected_date,
                             appointment_time=selected_time,
-                            comment=selected_comment,
-                        )
+                            status__in=[
+                                Appointment.STATUS_PENDING,
+                                Appointment.STATUS_CONFIRMED,
+                            ],
+                        ).exists()
+                        if conflict:
+                            error = "Это место уже занято на выбранное время"
+                        else:
+                            Appointment.objects.create(
+                                user=request.user,
+                                tariff=selected_tariff,
+                                seat=selected_seat,
+                                appointment_date=selected_date,
+                                appointment_time=selected_time,
+                                comment=selected_comment,
+                            )
+                    if not error:
                         messages.success(
                             request,
                             "Заявка принята! Мы подтвердим бронь в ближайшее время.",
@@ -243,6 +315,7 @@ def profile_view(request):
 def admin_panel_view(request):
     tab = request.GET.get("tab", "overview")
     search = (request.GET.get("q") or "").strip()
+    status_filter = request.GET.get("status", "")
 
     users_qs = User.objects.select_related("profile").order_by("-date_joined")
     if search:
@@ -253,10 +326,8 @@ def admin_panel_view(request):
         )
 
     appointments_qs = Appointment.objects.select_related("user").order_by("-created_at")
-    if tab == "appointments":
-        status_filter = request.GET.get("status", "")
-        if status_filter:
-            appointments_qs = appointments_qs.filter(status=status_filter)
+    if tab == "appointments" and status_filter:
+        appointments_qs = appointments_qs.filter(status=status_filter)
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -304,26 +375,58 @@ def admin_panel_view(request):
                 appointment.save(update_fields=["status"])
                 messages.success(request, f"Статус брони #{appointment.pk} обновлён.")
 
-        return redirect(f"{request.path}?tab={tab}" + (f"&q={search}" if search else ""))
+        return redirect(request.path + _admin_panel_redirect_url(tab, search, status_filter))
 
     stats = {
         "users_total": User.objects.count(),
         "users_banned": Profile.objects.filter(is_banned=True).count(),
-        "admins_total": Profile.objects.filter(is_site_admin=True).count(),
+        "admins_total": User.objects.filter(
+            Q(is_superuser=True) | Q(profile__is_site_admin=True)
+        ).distinct().count(),
         "appointments_total": Appointment.objects.count(),
         "appointments_pending": Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),
-        "appointments_today": Appointment.objects.filter(appointment_date=date.today()).count(),
+        "appointments_today": Appointment.objects.filter(
+            appointment_date=date.today(),
+        ).exclude(status=Appointment.STATUS_CANCELLED).count(),
     }
+
+    analytics = get_analytics_context() if tab == "analytics" else None
 
     return render(request, "main/admin_panel.html", {
         **_club_context(),
         "tab": tab,
         "search": search,
+        "status_filter": status_filter,
         "users": users_qs[:50],
         "appointments": appointments_qs[:50],
         "stats": stats,
+        "analytics": analytics,
         "status_choices": Appointment.STATUS_CHOICES,
     })
+
+
+@require_POST
+def catalog_session_ping(request):
+    session_id = request.POST.get("session_id")
+    try:
+        duration = int(request.POST.get("duration", 0))
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False, "error": "invalid_duration"}, status=400)
+
+    if duration < 0 or duration > 86400:
+        return JsonResponse({"ok": False, "error": "invalid_duration"}, status=400)
+
+    session_key = _ensure_session_key(request)
+    try:
+        catalog_session = CatalogSession.objects.get(pk=session_id, session_key=session_key)
+    except (CatalogSession.DoesNotExist, ValueError, TypeError):
+        return JsonResponse({"ok": False, "error": "not_found"}, status=404)
+
+    if duration > catalog_session.duration_seconds:
+        catalog_session.duration_seconds = duration
+        catalog_session.save(update_fields=["duration_seconds"])
+
+    return JsonResponse({"ok": True})
 
 
 def login_view(request):
@@ -345,14 +448,14 @@ def login_view(request):
             else:
                 login(request, user)
                 messages.success(request, f"С возвращением, {user.first_name or user.username}!")
-                next_url = request.GET.get("next") or "appointment"
-                return redirect(next_url)
+                return _safe_next_redirect(request)
         else:
             error = "Неверный логин или пароль"
 
     return render(request, "main/login.html", {**_club_context(), "error": error})
 
 
+@require_POST
 def logout_view(request):
     logout(request)
     messages.info(request, "Вы вышли из аккаунта.")

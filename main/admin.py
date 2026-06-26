@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.decorators import login_required
-from .models import Profile, Appointment
+from .models import Profile, Appointment, CatalogSession, TariffPageView
 
 
 @admin.register(Profile)
@@ -19,10 +18,16 @@ class AppointmentAdmin(admin.ModelAdmin):
     list_filter = ('tariff', 'appointment_date', 'status')
     search_fields = ('user__username', 'seat', 'tariff')
 
-@login_required  
-def dashboard_view(request):
-    
-    profile = request.user.profile 
-    
- 
-    appointments = Appointment.objects.filter(user=request.user).order_by('-appointment_date')
+
+@admin.register(CatalogSession)
+class CatalogSessionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'zone', 'duration_seconds', 'started_at')
+    list_filter = ('zone',)
+    search_fields = ('user__username', 'session_key')
+
+
+@admin.register(TariffPageView)
+class TariffPageViewAdmin(admin.ModelAdmin):
+    list_display = ('tariff', 'user', 'created_at')
+    list_filter = ('tariff',)
+    search_fields = ('user__username', 'tariff')
